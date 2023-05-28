@@ -1,8 +1,7 @@
-part of 'active_todo_count_cubit.dart';
+part of 'active_todo_count_bloc.dart';
 
 class ActiveTodoCountState extends Equatable {
   final int activeTodoCount;
-
   ActiveTodoCountState({
     required this.activeTodoCount,
   });

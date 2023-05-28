@@ -1,4 +1,4 @@
-part of 'todo_filter_cubit.dart';
+part of 'todo_filter_bloc.dart';
 
 class TodoFilterState extends Equatable {
   final Filter filter;

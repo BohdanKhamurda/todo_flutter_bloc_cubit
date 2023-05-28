@@ -1,4 +1,4 @@
-part of 'todo_search_cubit.dart';
+part of 'todo_search_bloc.dart';
 
 class TodoSearchState extends Equatable {
   final String searchTerm;
