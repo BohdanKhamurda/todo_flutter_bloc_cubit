@@ -99,56 +99,121 @@ class _TodoItemState extends State<TodoItem> {
     super.dispose();
   }
 
+  List<Todo> setFilteredTodos(
+      Filter filter, List<Todo> todos, String searchTerm) {
+    List<Todo> _filteredTodos;
+
+    switch (filter) {
+      case Filter.active:
+        _filteredTodos = todos.where((Todo todo) => !todo.completed).toList();
+        break;
+      case Filter.completed:
+        _filteredTodos = todos.where((Todo todo) => todo.completed).toList();
+        break;
+      case Filter.all:
+      default:
+        _filteredTodos = todos;
+        break;
+    }
+
+    if (searchTerm.isNotEmpty) {
+      _filteredTodos = _filteredTodos
+          .where((Todo todo) =>
+              todo.desc.toLowerCase().contains(searchTerm.toLowerCase()))
+          .toList();
+    }
+
+    return _filteredTodos;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (context) {
-            bool _error = false;
-            textController.text = widget.todo.desc;
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<TodoListBloc, TodoListState>(
+          listener: (context, state) {
+            final filteredTodos = setFilteredTodos(
+              context.read<TodoFilterBloc>().state.filter,
+              state.todos,
+              context.read<TodoSearchBloc>().state.searchTerm,
+            );
 
-            return StatefulBuilder(builder: (context, setState) {
-              return AlertDialog(
-                title: Text('Edit Todo'),
-                content: TextField(
-                  controller: textController,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    errorText: _error ? 'Value cannot be empty' : null,
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('Cancel'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _error = textController.text.isEmpty;
-                        if(!_error) {
-                          context.read<TodoListBloc>().add(EditTodoEvent(widget.todo.id, textController.text));
-                          Navigator.pop(context);
-                        }
-                      });
-                    },
-                    child: Text('Edit'),
-                  ),
-                ],
-              );
-            });
+            context.read<FilteredTodosBloc>().add(CalculateFilteredTodosEvent(filteredTodos: filteredTodos));
           },
-        );
-      },
-      leading: Checkbox(
-        value: widget.todo.completed,
-        onChanged: (chekc) {
-          context.read<TodoListBloc>().add(ToggleTodoEvent(widget.todo.id));
+        ),
+        BlocListener<TodoFilterBloc, TodoFilterState>(
+          listener: (context, state) {
+            final filteredTodos = setFilteredTodos(
+              state.filter,
+              context.read<TodoListBloc>().state.todos,
+              context.read<TodoSearchBloc>().state.searchTerm,
+            );
+
+            context.read<FilteredTodosBloc>().add(CalculateFilteredTodosEvent(filteredTodos: filteredTodos));
+          },
+        ),
+        BlocListener<TodoSearchBloc, TodoSearchState>(
+          listener: (context, state) {
+            final filteredTodos = setFilteredTodos(
+              context.read<TodoFilterBloc>().state.filter,
+              context.read<TodoListBloc>().state.todos,
+              state.searchTerm,
+            );
+
+            context.read<FilteredTodosBloc>().add(CalculateFilteredTodosEvent(filteredTodos: filteredTodos));
+          },
+        ),
+      ],
+      child: ListTile(
+        onTap: () {
+          showDialog(
+            context: context,
+            builder: (context) {
+              bool _error = false;
+              textController.text = widget.todo.desc;
+
+              return StatefulBuilder(builder: (context, setState) {
+                return AlertDialog(
+                  title: Text('Edit Todo'),
+                  content: TextField(
+                    controller: textController,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      errorText: _error ? 'Value cannot be empty' : null,
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _error = textController.text.isEmpty;
+                          if (!_error) {
+                            context.read<TodoListBloc>().add(EditTodoEvent(
+                                widget.todo.id, textController.text));
+                            Navigator.pop(context);
+                          }
+                        });
+                      },
+                      child: Text('Edit'),
+                    ),
+                  ],
+                );
+              });
+            },
+          );
         },
+        leading: Checkbox(
+          value: widget.todo.completed,
+          onChanged: (chekc) {
+            context.read<TodoListBloc>().add(ToggleTodoEvent(widget.todo.id));
+          },
+        ),
+        title: Text(widget.todo.desc),
       ),
-      title: Text(widget.todo.desc),
     );
   }
 }

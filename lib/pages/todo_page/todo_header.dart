@@ -15,9 +15,23 @@ class TodoHeader extends StatelessWidget {
           'TODO',
           style: TextStyle(fontSize: 40),
         ),
-        Text(
-          '${context.watch<ActiveTodoCountBloc>().state.activeTodoCount} items left',
-          style: TextStyle(fontSize: 20, color: Colors.redAccent),
+        BlocListener<TodoListBloc, TodoListState>(
+          listener: (context, state) {
+            final int activeTodoCount =
+                state.todos.where((todo) => !todo.completed).toList().length;
+
+            context.read<ActiveTodoCountBloc>().add(
+                CalculateActiveTodoCountEvent(
+                    activeTodoCount: activeTodoCount));
+          },
+          child: BlocBuilder<ActiveTodoCountBloc, ActiveTodoCountState>(
+            builder: (context, state) {
+              return Text(
+                '${state.activeTodoCount} items left',
+                style: TextStyle(fontSize: 20, color: Colors.redAccent),
+              );
+            },
+          ),
         ),
       ],
     );
